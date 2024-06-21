@@ -1,0 +1,89 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Módulo adicional de ingressos para Flexify Checkout para "
+"WooCommerce\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-06-21 01:57+0000\n"
+"PO-Revision-Date: 2024-06-21 01:58+0000\n"
+"Last-Translator: \n"
+"Language-Team: Português do Brasil\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.6.7; wp-6.5.4\n"
+"X-Domain: tickets-module-for-flexify-checkout"
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:133
+msgid "CPF"
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:297
+msgid "CPF: "
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:153
+msgid "E-mail"
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:299
+msgid "E-mail: "
+msgstr ""
+
+#. Description of the plugin
+msgid ""
+"Extensão que adiciona detalhes de ingressos, exclusivo para o Flexify "
+"Checkout para WooCommerce."
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://meumouse.com/"
+msgstr ""
+
+#. URI of the plugin
+msgid "https://meumouse.com/plugins/flexify-checkout-para-woocommerce/"
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:291
+msgid "Informações dos ingressos"
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:111
+#: inc/classes/class-flexify-checkout-tickets-core.php:294
+#, php-format
+msgid "Ingresso %s"
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:58
+msgid "Ingressos"
+msgstr ""
+
+#. Author of the plugin
+msgid "MeuMouse.com"
+msgstr ""
+
+#. Name of the plugin
+msgid "Módulo adicional de ingressos para Flexify Checkout para WooCommerce"
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:116
+msgid "Nome"
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:295
+msgid "Nome: "
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:123
+msgid "Sobrenome"
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:143
+msgid "Telefone"
+msgstr ""
+
+#: inc/classes/class-flexify-checkout-tickets-core.php:298
+msgid "Telefone: "
+msgstr ""

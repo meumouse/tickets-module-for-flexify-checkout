@@ -16,6 +16,8 @@
  * License: 				GPL2
  */
 
+namespace MeuMouse\Flexify_Checkout\Tickets;
+
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 
 // Exit if accessed directly.
@@ -55,9 +57,16 @@ class Flexify_Checkout_Tickets {
 	 * @return void
 	 */
 	public function __construct() {
-        $this->define_constants();
+        $this->setup_constants();
 
-        add_action( 'before_woocommerce_init', array( __CLASS__, 'setup_hpos_compatibility' ) );
+        add_action( 'before_woocommerce_init', array( $this, 'setup_hpos_compatibility' ) );
+
+		// load Composer
+		require_once FLEXIFY_CHECKOUT_TICKETS_PATH . 'vendor/autoload.php';
+
+		// initialize classes
+		new \MeuMouse\Flexify_Checkout\Tickets\Core\Checkout;
+		new \MeuMouse\Flexify_Checkout\Tickets\Core\Assets;
 	}
 
     
@@ -65,31 +74,31 @@ class Flexify_Checkout_Tickets {
 	 * Define constants
 	 * 
 	 * @since 1.0.0
+	 * @version 1.1.0
 	 * @return void
 	 */
-	private function define_constants() {
-		$this->define( 'FLEXIFY_CHECKOUT_TICKETS_FILE', __FILE__ );
-		$this->define( 'FLEXIFY_CHECKOUT_TICKETS_PATH', plugin_dir_path( __FILE__ ) );
-		$this->define( 'FLEXIFY_CHECKOUT_TICKETS_URL', plugin_dir_url( __FILE__ ) );
-		$this->define( 'FLEXIFY_CHECKOUT_TICKETS_ASSETS', FLEXIFY_CHECKOUT_TICKETS_URL . 'assets/' );
-		$this->define( 'FLEXIFY_CHECKOUT_TICKETS_INC_PATH', FLEXIFY_CHECKOUT_TICKETS_PATH . 'inc/' );
-		$this->define( 'FLEXIFY_CHECKOUT_TICKETS_BASENAME', plugin_basename( __FILE__ ) );
-		$this->define( 'FLEXIFY_CHECKOUT_TICKETS_VERSION', self::$version );
-		$this->define( 'FLEXIFY_CHECKOUT_TICKETS_SLUG', self::$slug );
-	}
+	private function setup_constants() {
+		$base_file = __FILE__;
+		$base_dir = plugin_dir_path( $base_file );
+		$base_url = plugin_dir_url( $base_file );
 
+		$constants = array(
+			'FLEXIFY_CHECKOUT_TICKETS_BASENAME' => plugin_basename( $base_file ),
+			'FLEXIFY_CHECKOUT_TICKETS_FILE' => $base_file,
+			'FLEXIFY_CHECKOUT_TICKETS_PATH' => $base_dir,
+			'FLEXIFY_CHECKOUT_TICKETS_INC_PATH' => $base_dir . 'inc/',
+			'FLEXIFY_CHECKOUT_TICKETS_URL' => $base_url,
+			'FLEXIFY_CHECKOUT_TICKETS_ASSETS' => $base_url . 'assets/',
+			'FLEXIFY_CHECKOUT_TICKETS_ABSPATH' => dirname( $base_file ) . '/',
+			'FLEXIFY_CHECKOUT_TICKETS_SLUG' => self::$slug,
+			'FLEXIFY_CHECKOUT_TICKETS_VERSION' => self::$version,
+		);
 
-    /**
-	 * Define constant if not already set
-	 *
-	 * @since 1.0.0
-	 * @param string $name | Constant name
-	 * @param string|bool $value | Constant value
-	 * @return void
-	 */
-	private function define( $name, $value ) {
-		if ( ! defined( $name ) ) {
-			define( $name, $value );
+		// iterate for each constant item
+		foreach ( $constants as $key => $value ) {
+			if ( ! defined( $key ) ) {
+				define( $key, $value );
+			}
 		}
 	}
 
@@ -101,7 +110,7 @@ class Flexify_Checkout_Tickets {
 	 * @version 1.1.0
 	 * @return void
 	 */
-	public static function setup_hpos_compatibility() {
+	public function setup_hpos_compatibility() {
 		if ( class_exists( FeaturesUtil::class ) ) {
 			FeaturesUtil::declare_compatibility( 'custom_order_tables', FLEXIFY_CHECKOUT_TICKETS_FILE, true );
 		}

@@ -26,7 +26,7 @@ class Checkout {
         add_filter( 'Flexify_Checkout/Steps/Set_Custom_Steps', array( __CLASS__, 'add_tickets_step' ), 20, 1 );
 
         // validadate errors
-        add_filter( 'flexify_checkout_target_fields_for_check_errors', array( __CLASS__, 'check_ticket_fields_errors' ), 20, 1 );
+        add_filter( 'Flexify_Checkout/Checkout/Fields/Target_Fields_For_Check_Errors', array( __CLASS__, 'check_ticket_fields_errors' ), 20, 1 );
 
         // validate ticket fields
         add_action( 'woocommerce_checkout_process', array( __CLASS__, 'validate_ticket_checkout_fields' ) );
@@ -303,5 +303,3 @@ class Checkout {
         }
     }
 }
-
-new Checkout();

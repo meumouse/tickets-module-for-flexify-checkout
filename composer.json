@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-4": {
-            "MeuMouse\\Flexify_Checkout\\Tickets": "inc/"
+            "MeuMouse\\Flexify_Checkout\\Tickets\\": "inc/"
         }
     }
 }

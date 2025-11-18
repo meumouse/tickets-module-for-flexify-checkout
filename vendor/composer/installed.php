@@ -3,7 +3,7 @@
         'name' => 'meumouse/tickets-module-for-flexify-checkout',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'b0931953baef9404497d106e593889d6d8f23657',
+        'reference' => '7f7c3b803d938b5f0321b4139a20e042c5c72ba1',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'meumouse/tickets-module-for-flexify-checkout' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'b0931953baef9404497d106e593889d6d8f23657',
+            'reference' => '7f7c3b803d938b5f0321b4139a20e042c5c72ba1',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

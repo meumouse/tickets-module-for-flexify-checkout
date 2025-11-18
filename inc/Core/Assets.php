@@ -48,5 +48,3 @@ class Assets {
         wp_localize_script( 'flexify-checkout-ticket-fields', 'fcw_ticket_fields_params', $ticket_fields_params );
     }
 }
-
-new Assets();

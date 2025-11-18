@@ -1,0 +1,21 @@
+{
+    "name": "meumouse/tickets-module-for-flexify-checkout",
+    "description": "Extensão que adiciona detalhes de ingressos, exclusivo para o Flexify Checkout para WooCommerce.",
+    "type": "library",
+    "license": "Proprietary",
+    "authors": [
+        {
+            "name": "MeuMouse.com",
+            "email": "contato@meumouse.com",
+            "homepage": "https://meumouse.com"
+        }
+    ],
+    "require": {
+        "php": ">= 7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "MeuMouse\\Flexify_Checkout\\Tickets\\": "inc/"
+        }
+    }
+}

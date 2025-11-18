@@ -1,28 +1,34 @@
 <?php
 
 /**
- * Plugin Name: 			Módulo adicional de ingressos para Flexify Checkout para WooCommerce
+ * Plugin Name: 			Flexify Checkout: Módulo de Ingressos
  * Description: 			Extensão que adiciona detalhes de ingressos, exclusivo para o Flexify Checkout para WooCommerce.
  * Plugin URI: 				https://meumouse.com/plugins/flexify-checkout-para-woocommerce/
  * Author: 					MeuMouse.com
  * Author URI: 				https://meumouse.com/
- * Version: 				1.0.0
+ * Version: 				1.1.0
  * WC requires at least: 	6.0.0
- * WC tested up to: 		9.0.0
+ * WC tested up to: 		10.3.5
  * Requires PHP: 			7.4
- * Tested up to:      		6.5.2
+ * Tested up to:      		6.8.3
  * Text Domain: 			tickets-module-for-flexify-checkout
  * Domain Path: 			/languages
  * License: 				GPL2
  */
+
+use Automattic\WooCommerce\Utilities\FeaturesUtil;
 
 // Exit if accessed directly.
 defined('ABSPATH') || exit;
 
 /**
  * Flexify_Checkout_Tickets
+ * 
+ * @since 1.0.0
+ * @version 1.1.0
+ * @package MeuMouse.com
  */
-class Flexify_Checkout_Tickets extends Flexify_Checkout {
+class Flexify_Checkout_Tickets {
 
 	/**
 	 * Plugin slug.
@@ -38,22 +44,20 @@ class Flexify_Checkout_Tickets extends Flexify_Checkout {
 	 * @since 1.0.0
 	 * @var string
 	 */
-	public static $version = '1.0.0';
+	public static $version = '1.1.0';
 
 
 	/**
 	 * Construct the plugin
 	 * 
 	 * @since 1.0.0
+	 * @version 1.1.0
 	 * @return void
 	 */
 	public function __construct() {
-        parent::__construct();
-
         $this->define_constants();
 
         add_action( 'before_woocommerce_init', array( __CLASS__, 'setup_hpos_compatibility' ) );
-        $this->setup_includes();
 	}
 
     
@@ -94,35 +98,13 @@ class Flexify_Checkout_Tickets extends Flexify_Checkout {
 	 * Setp compatibility with HPOS/Custom order table feature of WooCommerce.
 	 *
 	 * @since 1.0.0
+	 * @version 1.1.0
 	 * @return void
 	 */
 	public static function setup_hpos_compatibility() {
-		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', FLEXIFY_CHECKOUT_TICKETS_FILE, true );
+		if ( class_exists( FeaturesUtil::class ) ) {
+			FeaturesUtil::declare_compatibility( 'custom_order_tables', FLEXIFY_CHECKOUT_TICKETS_FILE, true );
 		}
-	}
-
-
-	/**
-	 * Load classes
-	 * 
-	 * @since 1.0.0
-	 * @return void
-	 */
-	private function setup_includes() {
-        /**
-         * Add tickets step changes
-         * 
-         * @since 1.0.0
-         */
-        include_once FLEXIFY_CHECKOUT_TICKETS_INC_PATH . 'classes/class-flexify-checkout-tickets-core.php';
-
-        /**
-         * Include assets
-         * 
-         * @since 1.0.0
-         */
-        include_once FLEXIFY_CHECKOUT_TICKETS_INC_PATH . 'classes/class-flexify-checkout-tickets-assets.php';
 	}
 }
 

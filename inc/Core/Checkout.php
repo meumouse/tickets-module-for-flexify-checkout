@@ -9,7 +9,7 @@ defined('ABSPATH') || exit;
  * Add tickets step on locate shipping step
  * 
  * @since 1.0.0
- * @version 1.1.0
+ * @version 1.1.2
  * @package MeuMouse.com
  */
 class Checkout {
@@ -205,30 +205,89 @@ class Checkout {
      * Validate ticket checkout fields
      * 
      * @since 1.0.0
+     * @version 1.1.2
      * @return void
      */
     public static function validate_ticket_checkout_fields() {
+        $cpf_list = array();
+
         for ( $i = 1; $i <= self::ticket_count(); $i++ ) {
-            if ( empty( $_POST['billing_first_name_' . $i] ) ) {
-                wc_add_notice( __('Por favor, preencha o nome para Ingresso ' . $i), 'error' );
+            $first_name_key = 'billing_first_name_' . $i;
+            $last_name_key = 'billing_last_name_' . $i;
+            $cpf_key = 'billing_cpf_' . $i;
+            $phone_key = 'billing_phone_' . $i;
+            $email_key = 'billing_email_' . $i;
+
+            if ( empty( $_POST[ $first_name_key ] ) ) {
+                wc_add_notice(
+                    sprintf(
+                        /* translators: %d: ticket index */
+                        __( 'Por favor, preencha o nome para Ingresso %d.', 'tickets-module-for-flexify-checkout' ),
+                        $i
+                    ),
+                    'error'
+                );
             }
 
-            if ( empty( $_POST['billing_last_name_' . $i])) {
-                wc_add_notice( __('Por favor, preencha o sobrenome para Ingresso ' . $i), 'error' );
+            if ( empty( $_POST[ $last_name_key ] ) ) {
+                wc_add_notice(
+                    sprintf(
+                        __( 'Por favor, preencha o sobrenome para Ingresso %d.', 'tickets-module-for-flexify-checkout' ),
+                        $i
+                    ),
+                    'error'
+                );
             }
 
-            if ( empty( $_POST['billing_cpf_' . $i] ) ) {
-                wc_add_notice( __('Por favor, preencha o CPF para Ingresso ' . $i), 'error' );
+            if ( empty( $_POST[ $cpf_key ] ) ) {
+                wc_add_notice(
+                    sprintf(
+                        __( 'Por favor, preencha o CPF para Ingresso %d.', 'tickets-module-for-flexify-checkout' ),
+                        $i
+                    ),
+                    'error'
+                );
+            } else {
+                // normalize CPF (remove all that not numbers)
+                $cpf_normalized = preg_replace( '/\D+/', '', wp_unslash( $_POST[ $cpf_key ] ) );
+
+                /**
+                 * Filter the normalized CPF value before unique validation
+                 *
+                 * @since 1.1.2
+                 * @param string $cpf_normalized | Normalized CPF
+                 * @param int $index | Ticket index.
+                 */
+                $cpf_normalized = apply_filters( 'Flexify_Checkout/Normalized_Cpf', $cpf_normalized, $i );
+
+                if ( ! empty( $cpf_normalized ) ) {
+                    $cpf_list[ $i ] = $cpf_normalized;
+                }
             }
 
-            if ( empty( $_POST['billing_phone_' . $i] ) ) {
-                wc_add_notice( __('Por favor, preencha o telefone para Ingresso ' . $i), 'error' );
+            if ( empty( $_POST[ $phone_key ] ) ) {
+                wc_add_notice(
+                    sprintf(
+                        __( 'Por favor, preencha o telefone para Ingresso %d.', 'tickets-module-for-flexify-checkout' ),
+                        $i
+                    ),
+                    'error'
+                );
             }
 
-            if ( empty( $_POST['billing_email_' . $i] ) ) {
-                wc_add_notice( __('Por favor, preencha o e-mail para Ingresso ' . $i), 'error' );
+            if ( empty( $_POST[ $email_key ] ) ) {
+                wc_add_notice(
+                    sprintf(
+                        __( 'Por favor, preencha o e-mail para Ingresso %d.', 'tickets-module-for-flexify-checkout' ),
+                        $i
+                    ),
+                    'error'
+                );
             }
         }
+
+        // validate unique documents (CPFs)
+        self::validate_ticket_unique_cpfs( $cpf_list );
     }
 
 
@@ -300,6 +359,70 @@ class Checkout {
             echo __('CPF: ', 'tickets-module-for-flexify-checkout') . get_post_meta( $order->get_id(), 'billing_cpf_' . $i, true ) . '<br>';
             echo __('Telefone: ', 'tickets-module-for-flexify-checkout') . get_post_meta( $order->get_id(), 'billing_phone_' . $i, true ) . '<br>';
             echo __('E-mail: ', 'tickets-module-for-flexify-checkout') . get_post_meta( $order->get_id(), 'billing_email_' . $i, true ) . '</p>';
+        }
+    }
+
+
+    /**
+     * Validate that each ticket has a unique CPF.
+     *
+     * @since 1.1.2
+     * @param array $cpf_list List of normalized CPFs indexed by ticket position.
+     * @return void
+     */
+    protected static function validate_ticket_unique_cpfs( $cpf_list ) {
+        if ( empty( $cpf_list ) || ! is_array( $cpf_list ) ) {
+            return;
+        }
+
+        /**
+         * Allow duplicate CPFs on tickets.
+         *
+         * If this filter returns true, CPF uniqueness validation will be skipped.
+         *
+         * @since 1.1.2
+         * @param bool  $allow_duplicates | Default false.
+         * @param array $cpf_list | List of CPFs to be validated.
+         */
+        $allow_duplicates = apply_filters(
+            'Flexify_Checkout/Tickets/Allow_Duplicate_Cpfs',
+            false,
+            $cpf_list
+        );
+
+        if ( true === $allow_duplicates ) {
+            return;
+        }
+
+        $seen = array();
+        $duplicates = array(); // store ticket index
+
+        foreach ( $cpf_list as $index => $cpf ) {
+            if ( '' === $cpf ) {
+                continue;
+            }
+
+            if ( isset( $seen[ $cpf ] ) ) {
+                $duplicates[] = $index;
+            } else {
+                $seen[ $cpf ] = $index;
+            }
+        }
+
+        if ( empty( $duplicates ) ) {
+            return;
+        }
+
+        // add notice for each duplicated ticket
+        foreach ( $duplicates as $index ) {
+            wc_add_notice(
+                sprintf(
+                    /* translators: %d: ticket index */
+                    __( 'O CPF informado para o Ingresso %d já foi utilizado em outro ingresso. Informe um CPF diferente.', 'tickets-module-for-flexify-checkout' ),
+                    $index
+                ),
+                'error'
+            );
         }
     }
 }

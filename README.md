@@ -2,6 +2,8 @@
 
 Extensão que adiciona detalhes de ingressos, exclusivo para o Flexify Checkout para WooCommerce.
 
+---
+
 ### Instalação:
 
 #### Instalação via painel de administração:
@@ -26,7 +28,12 @@ Você pode instalar um plugin WordPress de duas maneiras: via o painel de admini
 * Localize o plugin que você acabou de instalar e clique em “Ativar”.
 * Após seguir essas etapas, o plugin deve estar instalado e funcionando corretamente em seu site WordPress.
 
+---
+
 ### Registro de alterações (Changelogs):
+
+Versão 1.1.2 (19/11/2025)
+* Recurso adicionado: Validação de CPF único para cada ingresso no checkout
 
 Versão 1.1.0 (17/11/2025)
 * Compatibilidade com Flexify Checkout 5.x.x

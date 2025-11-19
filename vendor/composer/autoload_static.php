@@ -22,6 +22,8 @@ class ComposerStaticInit002c4a6f861c049bacaace6b29c95106
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'MeuMouse\\Flexify_Checkout\\Tickets\\Core\\Assets' => __DIR__ . '/../..' . '/inc/Core/Assets.php',
+        'MeuMouse\\Flexify_Checkout\\Tickets\\Core\\Checkout' => __DIR__ . '/../..' . '/inc/Core/Checkout.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

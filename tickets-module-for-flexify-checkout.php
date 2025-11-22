@@ -6,7 +6,7 @@
  * Plugin URI: 				https://meumouse.com/plugins/flexify-checkout-para-woocommerce/
  * Author: 					MeuMouse.com
  * Author URI: 				https://meumouse.com/
- * Version: 				1.1.2
+ * Version: 				1.2.0
  * WC requires at least: 	6.0.0
  * WC tested up to: 		10.3.5
  * Requires PHP: 			7.4
@@ -46,7 +46,7 @@ class Flexify_Checkout_Tickets {
 	 * @since 1.0.0
 	 * @var string
 	 */
-	public static $version = '1.1.2';
+	public static $version = '1.2.0';
 
 
 	/**
@@ -67,6 +67,7 @@ class Flexify_Checkout_Tickets {
 		// initialize classes
 		new \MeuMouse\Flexify_Checkout\Tickets\Core\Checkout;
 		new \MeuMouse\Flexify_Checkout\Tickets\Core\Assets;
+		new \MeuMouse\Flexify_Checkout\Tickets\Admin\Product;
 	}
 
     

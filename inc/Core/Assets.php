@@ -61,10 +61,13 @@ class Assets {
         wp_enqueue_script( 'flexify-checkout-ticket-scripts', $this->assets_url . 'frontend/js/fct-scripts.js', array('jquery'), $this->plugin_version );
         wp_enqueue_style( 'flexify-checkout-tickets-styles', $this->assets_url . 'frontend/css/fct-styles.css', array(), $this->plugin_version );
 
-        $ticket_fields_params = apply_filters( 'Flexify_Checkout/Tickets/Fields', array(
+        $params = apply_filters( 'Flexify_Checkout/Tickets/Frontend_Scripts', array(
             'fields_to_mask' => Checkout::get_ticket_fields(),
+            'i18n' => array(
+                
+            ),
         ));
 
-        wp_localize_script( 'flexify-checkout-ticket-scripts', 'fcw_ticket_fields_params', $ticket_fields_params );
+        wp_localize_script( 'flexify-checkout-ticket-scripts', 'fcw_ticket_fields_params', $params );
     }
 }

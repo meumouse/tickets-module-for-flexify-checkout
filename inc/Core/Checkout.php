@@ -30,6 +30,9 @@ class Checkout {
         // validadate errors
         add_filter( 'Flexify_Checkout/Checkout/Fields/Target_Fields_For_Check_Errors', array( $this, 'check_ticket_fields_errors' ), 20, 1 );
 
+        // add inline error if has phone or document duplicated
+    //    add_filter( 'Flexify_Checkout/Checkout/Fields/Custom_Inline_Message', array( $this, 'add_ticket_unique_inline_errors' ), 20, 6 );
+
         // validate ticket fields
         add_action( 'woocommerce_checkout_process', array( $this, 'validate_ticket_checkout_fields' ) );
 
@@ -40,7 +43,7 @@ class Checkout {
         add_action( 'woocommerce_admin_order_data_after_billing_address', array( $this, 'display_fields_on_order_details' ), 10, 1 );
 
         // refresh ticket step when order review fragments are requested
-        add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'append_ticket_fragment' ), 10, 1 );
+    //    add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'append_ticket_fragment' ), 10, 1 );
     }
 
 
@@ -175,7 +178,7 @@ class Checkout {
         // start buffer
         ob_start();
 
-        echo '<div id="flexify-ticket-fields" data-ticket-count="' . esc_attr( $ticket_count ) . '">';
+        echo '<div class="flexify-ticket-fields" data-ticket-count="' . esc_attr( $ticket_count ) . '">';
             // Add fields according to the number of tickets
             for ( $i = 1; $i <= $ticket_count; $i++ ) {
                 echo '<h3 class="h2 ticket-step-title flexify-heading">' . sprintf( __('Ingresso %s', 'tickets-module-for-flexify-checkout'), $i ) . '</h3>';
@@ -643,12 +646,212 @@ class Checkout {
      * @return array
      */
     public function append_ticket_fragment( $fragments ) {
-        if ( ! defined('IS_FLEXIFY_CHECKOUT') || ! IS_FLEXIFY_CHECKOUT ) {
+        if ( ! is_flexify_checkout() ) {
             return $fragments;
         }
 
-        $fragments['#flexify-ticket-fields'] = self::get_ticket_fields_markup();
+        $fragments['.flexify-ticket-fields'] = self::get_ticket_fields_markup();
 
         return $fragments;
+    }
+
+
+    /**
+     * Add inline error messages when CPF or phone is duplicated between tickets.
+     *
+     * This hooks into Flexify_Checkout render_inline_errors() through the
+     * 'Flexify_Checkout/Checkout/Fields/Custom_Inline_Message' filter.
+     *
+     * @since 1.2.0
+     * @param string $message Current inline message.
+     * @param string $field   Field HTML.
+     * @param string $key     Field key (e.g., billing_cpf_1).
+     * @param array  $args    Field args.
+     * @param string $value   Field value.
+     * @param string $country Country.
+     * @return string
+     */
+    public function add_ticket_unique_inline_errors( $message, $field, $key, $args, $value, $country ) {
+        // check if has tickets
+        if ( 0 === self::ticket_count() ) {
+            return $message;
+        }
+
+        if ( '' === $value ) {
+            return $message;
+        }
+
+        if ( ! empty( $message ) && false === strpos( $message, 'é um campo obrigatório' ) ) {
+            return $message;
+        }
+
+        // try to get ticket index from end key (_1, _2, _3...)
+        if ( ! preg_match( '/_(\d+)$/', $key, $matches ) ) {
+            return $message;
+        }
+
+        $index = absint( $matches[1] );
+
+        if ( $index < 1 ) {
+            return $message;
+        }
+
+        // CPF duplicated
+        if ( 0 === strpos( $key, 'billing_cpf_' ) ) {
+            $message = $this->get_inline_duplicate_cpf_message( $index );
+        }
+
+        // phone duplicated
+        if ( 0 === strpos( $key, 'billing_phone_' ) ) {
+            $message = $this->get_inline_duplicate_phone_message( $index );
+        }
+
+        return $message;
+    }
+
+
+    /**
+     * Build duplicate CPF inline message for the given ticket index, if any.
+     *
+     * @since 1.2.0
+     * @param int $current_index | Ticket index.
+     * @return string
+     */
+    protected function get_inline_duplicate_cpf_message( $current_index ) {
+        $ticket_count = self::ticket_count();
+        $cpf_list = array();
+
+        for ( $i = 1; $i <= $ticket_count; $i++ ) {
+            $field_key = 'billing_cpf_' . $i;
+
+            if ( ! isset( $_POST[ $field_key ] ) ) {
+                continue;
+            }
+
+            $raw_cpf = wc_clean( wp_unslash( $_POST[ $field_key ] ) );
+            $cpf_normalized = preg_replace( '/\D+/', '', $raw_cpf );
+
+            /**
+             * Filter the normalized CPF value before unique validation.
+             *
+             * @since 1.1.2
+             * @param string $cpf_normalized Normalized CPF.
+             * @param int    $index         Ticket index.
+             */
+            $cpf_normalized = apply_filters( 'Flexify_Checkout/Tickets/Normalized_Cpf', $cpf_normalized, $i );
+
+            if ( '' !== $cpf_normalized ) {
+                $cpf_list[ $i ] = $cpf_normalized;
+            }
+        }
+
+        if ( empty( $cpf_list ) || ! isset( $cpf_list[ $current_index ] ) ) {
+            return '';
+        }
+
+        /**
+         * Allow duplicate CPFs on tickets.
+         *
+         * @since 1.1.2
+         * @param bool  $allow_duplicates | Default false.
+         * @param array $cpf_list | List of CPFs.
+         */
+        $allow_duplicates = apply_filters( 'Flexify_Checkout/Tickets/Allow_Duplicate_Cpfs', false, $cpf_list );
+
+        if ( true === $allow_duplicates ) {
+            return '';
+        }
+
+        $current_cpf = $cpf_list[ $current_index ];
+
+        // check if exists other ticket with same cpf
+        foreach ( $cpf_list as $i => $cpf ) {
+            if ( $i === $current_index ) {
+                continue;
+            }
+
+            if ( $cpf === $current_cpf ) {
+                return sprintf(
+                    /* translators: %d: ticket index */
+                    __( 'O CPF informado para o Ingresso %d já foi utilizado em outro ingresso. Informe um CPF diferente.', 'tickets-module-for-flexify-checkout' ),
+                    $current_index
+                );
+            }
+        }
+
+        return '';
+    }
+
+
+    /**
+     * Build duplicate phone inline message for the given ticket index, if any.
+     *
+     * @since 1.2.0
+     * @param int $current_index | Ticket index.
+     * @return string
+     */
+    protected function get_inline_duplicate_phone_message( $current_index ) {
+        $ticket_count = self::ticket_count();
+        $phone_list = array();
+
+        // Monta a lista de telefones normalizados, igual ao validate_ticket_unique_phones().
+        for ( $i = 1; $i <= $ticket_count; $i++ ) {
+            $field_key = 'billing_phone_' . $i;
+
+            if ( ! isset( $_POST[ $field_key ] ) ) {
+                continue;
+            }
+
+            $raw_phone = wc_clean( wp_unslash( $_POST[ $field_key ] ) );
+            $phone_normalized = preg_replace( '/\D+/', '', $raw_phone );
+
+            /**
+             * Filter the normalized phone value before unique validation.
+             *
+             * @since 1.2.0
+             * @param string $phone_normalized | Normalized phone.
+             * @param int $index | Ticket index.
+             */
+            $phone_normalized = apply_filters( 'Flexify_Checkout/Tickets/Normalized_Phone', $phone_normalized, $i );
+
+            if ( '' !== $phone_normalized ) {
+                $phone_list[ $i ] = $phone_normalized;
+            }
+        }
+
+        if ( empty( $phone_list ) || ! isset( $phone_list[ $current_index ] ) ) {
+            return '';
+        }
+
+        /**
+         * Allow duplicate phones on tickets.
+         *
+         * @since 1.2.0
+         * @param bool  $allow_duplicates Default false.
+         * @param array $phone_list       List of phones.
+         */
+        $allow_duplicates = apply_filters( 'Flexify_Checkout/Tickets/Allow_Duplicate_Phones', false, $phone_list );
+
+        if ( true === $allow_duplicates ) {
+            return '';
+        }
+
+        $current_phone = $phone_list[ $current_index ];
+
+        foreach ( $phone_list as $i => $phone ) {
+            if ( $i === $current_index ) {
+                continue;
+            }
+
+            if( $phone === $current_phone ) {
+                return sprintf(
+                    /* translators: %d: ticket index */
+                    __( 'O telefone informado para o Ingresso %d já foi utilizado em outro ingresso. Informe um telefone diferente.', 'tickets-module-for-flexify-checkout' ),
+                    $current_index
+                );
+            }
+        }
+
+        return '';
     }
 }

@@ -20,7 +20,7 @@ class Assets {
      * @since 1.2.0
      * @return string
      */
-    public static $assets_url = FLEXIFY_CHECKOUT_TICKETS_ASSETS;
+    public $assets_url = FLEXIFY_CHECKOUT_TICKETS_ASSETS;
 
     /**
      * Plugin version
@@ -28,7 +28,7 @@ class Assets {
      * @since 1.2.0
      * @return string
      */
-    public static $plugin_version = FLEXIFY_CHECKOUT_TICKETS_VERSION;
+    public $plugin_version = FLEXIFY_CHECKOUT_TICKETS_VERSION;
 
     /**
      * Construct function

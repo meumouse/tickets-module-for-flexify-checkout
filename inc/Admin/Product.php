@@ -44,7 +44,7 @@ class Product {
         woocommerce_wp_checkbox(
             array(
                 'id' => self::META_KEY,
-                'label' => __( 'Produto de ingresso', 'tickets-module-for-flexify-checkout' ),
+                'label' => __( 'Ativar produto de ingresso', 'tickets-module-for-flexify-checkout' ),
                 'description' => __( 'Permite coletar dados dos participante do ingresso durante a finalização da compra.', 'tickets-module-for-flexify-checkout' ),
             )
         );

@@ -187,6 +187,7 @@ class Checkout {
                 'class' => array(
                     'form-row-last',
                     'validate-phone-field',
+                    'flexify-intl-phone',
                 ),
                 'label' => __('Telefone', 'tickets-module-for-flexify-checkout'),
                 'required' => true,

@@ -67,6 +67,7 @@ class Flexify_Checkout_Tickets {
 		// initialize classes
 		new \MeuMouse\Flexify_Checkout\Tickets\Core\Checkout;
 		new \MeuMouse\Flexify_Checkout\Tickets\Core\Assets;
+		new \MeuMouse\Flexify_Checkout\Tickets\Admin\Product;
 	}
 
     

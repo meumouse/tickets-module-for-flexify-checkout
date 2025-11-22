@@ -2,6 +2,8 @@
 
 namespace MeuMouse\Flexify_Checkout\Tickets\Core;
 
+use MeuMouse\Flexify_Checkout\Tickets\Admin\Product;
+
 // Exit if accessed directly.
 defined('ABSPATH') || exit;
 
@@ -13,11 +15,6 @@ defined('ABSPATH') || exit;
  * @package MeuMouse.com
  */
 class Checkout {
-
-    /**
-     * Option key that enables DDI phone support inside Flexify Checkout.
-     */
-    protected const FLEXIFY_ENABLE_DDI_OPTION = 'enable_ddi_phone_field';
 
     /**
      * Construct function

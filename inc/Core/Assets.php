@@ -15,6 +15,22 @@ defined('ABSPATH') || exit;
 class Assets {
 
     /**
+     * Plugin assets directory
+     * 
+     * @since 1.2.0
+     * @return string
+     */
+    public static $assets_url = FLEXIFY_CHECKOUT_TICKETS_ASSETS;
+
+    /**
+     * Plugin version
+     * 
+     * @since 1.2.0
+     * @return string
+     */
+    public static $plugin_version = FLEXIFY_CHECKOUT_TICKETS_VERSION;
+
+    /**
      * Construct function
      * 
      * @since 1.0.0
@@ -42,13 +58,13 @@ class Assets {
             return;
         }
 
-        wp_enqueue_script( 'flexify-checkout-ticket-fields', FLEXIFY_CHECKOUT_TICKETS_ASSETS . 'js/tickets-module-for-flexify-checkout-frontend.js', array('jquery'), FLEXIFY_CHECKOUT_TICKETS_VERSION );
-        wp_enqueue_style( 'flexify-checkout-tickets-styles', FLEXIFY_CHECKOUT_TICKETS_ASSETS . 'css/flexify-checkout-tickets-styles.css', array(), FLEXIFY_CHECKOUT_TICKETS_VERSION );
+        wp_enqueue_script( 'flexify-checkout-ticket-scripts', $this->assets_url . 'frontend/js/fct-scripts.js', array('jquery'), $this->plugin_version );
+        wp_enqueue_style( 'flexify-checkout-tickets-styles', $this->assets_url . 'frontend/css/fct-styles.css', array(), $this->plugin_version );
 
-        $ticket_fields_params = apply_filters( 'flexify_checkout_ticket_fields', array(
+        $ticket_fields_params = apply_filters( 'Flexify_Checkout/Tickets/Fields', array(
             'fields_to_mask' => Checkout::get_ticket_fields(),
         ));
 
-        wp_localize_script( 'flexify-checkout-ticket-fields', 'fcw_ticket_fields_params', $ticket_fields_params );
+        wp_localize_script( 'flexify-checkout-ticket-scripts', 'fcw_ticket_fields_params', $ticket_fields_params );
     }
 }

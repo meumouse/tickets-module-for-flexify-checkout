@@ -8,9 +8,53 @@
 ( function( window, $ ) {
     'use strict';
 
+    /**
+     * Time to live Cookies
+     * 
+     * @since 1.0.0
+     * @version 1.2.0
+     * @return {int}
+     */
     var COOKIE_TTL_DAYS = 7;
+
+    /**
+     * Plugin params
+     * 
+     * @since 1.0.0
+     * @version 1.2.0
+     * @return {object}
+     */
     var params = window.fcw_ticket_fields_params || {};
-    var fieldIds = params.fields_to_mask || [];
+
+    /**
+     * Field prefixes array
+     * 
+     * @since 1.2.0
+     * @return {Array}
+     */
+    var ticketFieldPrefixes = [
+        'billing_first_name_',
+        'billing_last_name_',
+        'billing_cpf_',
+        'billing_phone_',
+        'billing_email_',
+    ];
+
+    /**
+     * Fields to mask
+     * 
+     * @since 1.0.0
+     * @version 1.2.0
+     * @return {object}
+     */
+    var fieldIds = [];
+
+    /**
+     * Notice selector
+     * 
+     * @since 1.2.0
+     * @return {string}
+     */
     var noticeSelector = '.flexify-ticket-errors';
 
     // Basic cookie storage used to persist values across refreshes.
@@ -59,6 +103,28 @@
         }
     }
 
+    // Locate ticket fields currently rendered in the DOM.
+    function findTicketFields() {
+        var ids = [];
+
+        ticketFieldPrefixes.forEach( function ( prefix ) {
+            $( '[id^="' + prefix + '"]' ).each( function () {
+                ids.push( this.id );
+            } );
+        } );
+
+        return ids;
+    }
+
+    // Refresh the list of ticket fields, prioritizing what is rendered on the page.
+    function refreshFieldIds() {
+        fieldIds = findTicketFields();
+
+        if ( ! fieldIds.length && params.fields_to_mask ) {
+            fieldIds = params.fields_to_mask;
+        }
+    }
+
     // Restore cached values from cookies for all dynamic ticket fields.
     function loadCachedValues() {
         fieldIds.forEach( function ( fieldId ) {
@@ -76,7 +142,11 @@
         CookieStore.set( fieldId, fieldValue, COOKIE_TTL_DAYS );
     }
 
-    // Add masks and cache handlers to every ticket field.
+    /**
+     * Add masks and cache handlers to every ticket field.
+     * 
+     * @since 1.2.0
+     */
     function bindCacheHandlers() {
         fieldIds.forEach( function ( fieldId ) {
             var $field = $( '#' + fieldId );
@@ -84,10 +154,11 @@
             applyMaskForField( $field, fieldId );
             cacheFieldValue( fieldId );
 
-            $field.on( 'input', function () {
+            $field.off( '.flexifyTicketCache' );
+            $field.on( 'input.flexifyTicketCache', function () {
                 cacheFieldValue( fieldId );
-            } );
-        } );
+            });
+        });
     }
 
     // Remove all non-digit characters.
@@ -211,10 +282,20 @@
         $( document.body ).on( 'click', '.flexify-checkout__btn--next, .fc-next-step, .fcw-step-next', handleStepChange );
     }
 
+    function handleCheckoutUpdated() {
+        refreshFieldIds();
+        removeValidationFeedback();
+        loadCachedValues();
+        bindCacheHandlers();
+    }
+
     function init() {
+        refreshFieldIds();
         loadCachedValues();
         bindCacheHandlers();
         bindStepValidation();
+
+        $(document.body).on( 'updated_checkout', handleCheckoutUpdated );
     }
 
     $( init );

@@ -1,89 +1,221 @@
 /**
- * Add masks to ticket fields and save to cookies
- * 
+ * Ticket step helpers for Flexify Checkout.
+ *
  * @since 1.0.0
+ * @version 1.2.0
  * @package MeuMouse.com
  */
-jQuery(document).ready( function($) {
-    // get ticket fields array from backend
-    var get_fields_to_mask = fcw_ticket_fields_params.fields_to_mask || [];
+( function( window, $ ) {
+    'use strict';
 
-    /**
-     * Set input value on cache on browser cookies
-     * 
-     * @since 1.0.0
-     * @param {string} name | Cookie name
-     * @param {string} value | Cookie input value
-     * @param {int} days | Number days for cache info
-     * @package MeuMouse.com
-     */
-    function set_cookie(name, value, days) {
-        var expires = "";
+    var COOKIE_TTL_DAYS = 7;
+    var params = window.fcw_ticket_fields_params || {};
+    var fieldIds = params.fields_to_mask || [];
+    var noticeSelector = '.flexify-ticket-errors';
 
-        if (days) {
-            var date = new Date();
-            date.setTime(date.getTime() + (days*24*60*60*1000));
-            expires = "; expires=" + date.toUTCString();
-        }
+    // Basic cookie storage used to persist values across refreshes.
+    var CookieStore = {
+        set: function ( name, value, days ) {
+            var expires = '';
+            var ttl = days || COOKIE_TTL_DAYS;
 
-        document.cookie = name + "=" + (value || "") + expires + "; path=/";
-    }
-
-    /**
-     * Get input value from cookie name
-     * 
-     * @since 1.0.0
-     * @param {string} name | Cookie name
-     * @returns Input value or null
-     */
-    function get_cookie(name) {
-        var nameEQ = name + "=";
-        var ca = document.cookie.split(';');
-
-        for ( var i = 0; i < ca.length; i++ ) {
-            var c = ca[i];
-
-            while ( c.charAt(0) == ' ' ) c = c.substring( 1, c.length );
-
-            if ( c.indexOf(nameEQ) == 0 ) return c.substring( nameEQ.length, c.length );
-        }
-
-        return null;
-    }
-
-    /**
-     * Load input value from cookies
-     * 
-     * @since 1.0.0
-     */
-    function load_values_from_cookies() {
-        $(get_fields_to_mask).each( function(index, value) {
-            var cookie_value = get_cookie(value);
-
-            if (cookie_value) {
-                $('#' + value).val(cookie_value);
+            if ( ttl ) {
+                var date = new Date();
+                date.setTime( date.getTime() + ( ttl * 24 * 60 * 60 * 1000 ) );
+                expires = '; expires=' + date.toUTCString();
             }
-        });
-    }
 
-    // Load values from cookies on page load
-    load_values_from_cookies();
+            document.cookie = name + '=' + ( value || '' ) + expires + '; path=/';
+        },
 
-    // Add masks and set initial cookie values
-    $(get_fields_to_mask).each( function(index, value) {
-        if (value.includes('billing_cpf_')) {
-            $('#' + value).mask('000.000.000-00');
-        } else if (value.includes('billing_phone_')) {
-            $('#' + value).mask('(00) 00000-0000');
+        get: function ( name ) {
+            var nameEQ = name + '=';
+            var cookies = document.cookie.split( ';' );
+
+            for ( var i = 0; i < cookies.length; i++ ) {
+                var cookie = cookies[ i ];
+
+                while ( cookie.charAt( 0 ) === ' ' ) {
+                    cookie = cookie.substring( 1, cookie.length );
+                }
+
+                if ( cookie.indexOf( nameEQ ) === 0 ) {
+                    return cookie.substring( nameEQ.length, cookie.length );
+                }
+            }
+
+            return null;
+        }
+    };
+
+    // Attach masks to CPF and phone fields to guide user input.
+    function applyMaskForField( $field, fieldId ) {
+        if ( fieldId.indexOf( 'billing_cpf_' ) !== -1 ) {
+            $field.mask( '000.000.000-00' );
         }
 
-        // Set initial cookie value
-        var initial_value = $('#' + value).val();
-        set_cookie(value, initial_value, 7); // Cookie expires in 7 days
+        if ( fieldId.indexOf( 'billing_phone_' ) !== -1 ) {
+            $field.mask( '(00) 00000-0000' );
+        }
+    }
 
-        // Update cookie value on change
-        $('#' + value).on('input', function() {
-            set_cookie(value, $(this).val(), 7);
-        });
-    });
-});
+    // Restore cached values from cookies for all dynamic ticket fields.
+    function loadCachedValues() {
+        fieldIds.forEach( function ( fieldId ) {
+            var cachedValue = CookieStore.get( fieldId );
+
+            if ( cachedValue ) {
+                $( '#' + fieldId ).val( cachedValue );
+            }
+        } );
+    }
+
+    // Cache a specific field on demand.
+    function cacheFieldValue( fieldId ) {
+        var fieldValue = $( '#' + fieldId ).val();
+        CookieStore.set( fieldId, fieldValue, COOKIE_TTL_DAYS );
+    }
+
+    // Add masks and cache handlers to every ticket field.
+    function bindCacheHandlers() {
+        fieldIds.forEach( function ( fieldId ) {
+            var $field = $( '#' + fieldId );
+
+            applyMaskForField( $field, fieldId );
+            cacheFieldValue( fieldId );
+
+            $field.on( 'input', function () {
+                cacheFieldValue( fieldId );
+            } );
+        } );
+    }
+
+    // Remove all non-digit characters.
+    function normalizeDigits( value ) {
+        return ( value || '' ).replace( /\D+/g, '' );
+    }
+
+    // Clear visual validation feedback before a new validation cycle.
+    function removeValidationFeedback() {
+        $( noticeSelector ).remove();
+
+        fieldIds.forEach( function ( fieldId ) {
+            $( '#' + fieldId ).removeClass( 'woocommerce-invalid' );
+        } );
+    }
+
+    // Display WooCommerce styled errors at the top of the checkout form.
+    function showValidationMessages( messages ) {
+        var $checkoutForm = $( 'form.checkout' );
+        var $noticesWrapper = $( '<ul class="woocommerce-error flexify-ticket-errors" />' );
+
+        messages.forEach( function ( message ) {
+            $noticesWrapper.append( '<li>' + message + '</li>' );
+        } );
+
+        if ( ! $checkoutForm.find( '.woocommerce-notices-wrapper' ).length ) {
+            $checkoutForm.prepend( '<div class="woocommerce-notices-wrapper"></div>' );
+        }
+
+        $checkoutForm.find( '.woocommerce-notices-wrapper' ).first().prepend( $noticesWrapper );
+        window.scrollTo( { top: $checkoutForm.offset().top, behavior: 'smooth' } );
+    }
+
+    // Helper used by CPF/phone validators to ensure unique values.
+    function validateUniqueValues( values, fieldLabel ) {
+        var seen = {};
+        var duplicates = [];
+
+        values.forEach( function ( value ) {
+            if ( ! value ) {
+                return;
+            }
+
+            if ( seen[ value ] ) {
+                duplicates.push( value );
+                return;
+            }
+
+            seen[ value ] = true;
+        } );
+
+        if ( ! duplicates.length ) {
+            return [];
+        }
+
+        return [ 'O ' + fieldLabel + ' informado já foi utilizado em outro ingresso. Informe um ' + fieldLabel + ' diferente.' ];
+    }
+
+    // Validate ticket fields locally before advancing to the next step.
+    function validateTicketFields() {
+        if ( ! fieldIds.length ) {
+            return { isValid: true, messages: [] };
+        }
+
+        removeValidationFeedback();
+
+        var messages = [];
+        var cpfList = [];
+        var phoneList = [];
+
+        fieldIds.forEach( function ( fieldId ) {
+            var $field = $( '#' + fieldId );
+            var value = $.trim( $field.val() || '' );
+
+            if ( ! value ) {
+                var labelText = $field.closest( '.form-row' ).find( 'label' ).text() || fieldId;
+                messages.push( 'Por favor, preencha o campo ' + labelText + '.' );
+                $field.addClass( 'woocommerce-invalid' );
+            }
+
+            if ( fieldId.indexOf( 'billing_cpf_' ) !== -1 ) {
+                cpfList.push( normalizeDigits( value ) );
+            }
+
+            if ( fieldId.indexOf( 'billing_phone_' ) !== -1 ) {
+                phoneList.push( normalizeDigits( value ) );
+            }
+        } );
+
+        messages = messages.concat( validateUniqueValues( cpfList, 'CPF' ) ).concat( validateUniqueValues( phoneList, 'telefone' ) );
+
+        return {
+            isValid: messages.length === 0,
+            messages: messages,
+        };
+    }
+
+    // Stop step navigation when validation fails and show the errors.
+    function handleStepChange( event ) {
+        var validation = validateTicketFields();
+
+        if ( validation.isValid ) {
+            return true;
+        }
+
+        if ( event && typeof event.preventDefault === 'function' ) {
+            event.preventDefault();
+        }
+
+        if ( event && typeof event.stopImmediatePropagation === 'function' ) {
+            event.stopImmediatePropagation();
+        }
+
+        showValidationMessages( validation.messages );
+
+        return false;
+    }
+
+    function bindStepValidation() {
+        $( document.body ).on( 'flexify_checkout_next_step flexify_checkout_before_change_step', handleStepChange );
+        $( document.body ).on( 'click', '.flexify-checkout__btn--next, .fc-next-step, .fcw-step-next', handleStepChange );
+    }
+
+    function init() {
+        loadCachedValues();
+        bindCacheHandlers();
+        bindStepValidation();
+    }
+
+    $( init );
+})( window, jQuery );

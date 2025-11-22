@@ -121,6 +121,11 @@
         }
 
         if (fieldId.indexOf('billing_phone_') !== -1 && $.fn.mask) {
+            // Skip phone mask when using intl-tel-input
+            if ($field.closest('.flexify-intl-phone').length) {
+                return;
+            }
+
             $field.mask('(00) 00000-0000');
         }
     }
@@ -136,7 +141,16 @@
 
         ticketFieldPrefixes.forEach(function (prefix) {
             $('input[id^="' + prefix + '"]').each(function () {
-                ids.push(this.id);
+                var id = this.id;
+
+                // For phone fields, only accept billing_phone_N (N = dígitos, sem sufixo _full)
+                if (prefix === 'billing_phone_') {
+                    if (!/^billing_phone_\d+$/.test(id)) {
+                        return;
+                    }
+                }
+
+                ids.push(id);
             });
         });
 
@@ -573,15 +587,116 @@
         );
     }
 
+        /**
+     * Ensure hidden intl phone field billing_phone_{i}_full exists
+     *
+     * @since 1.2.0
+     * @param {jQuery} $field Phone input
+     * @return {jQuery|null}
+     */
+    function ensureIntlPhoneFullField($field) {
+        if (!$field || !$field.length) {
+            return null;
+        }
+
+        var id = $field.attr('id') || '';
+        var match = id.match(/^billing_phone_(\d+)$/);
+
+        if (!match) {
+            return null;
+        }
+
+        var index = match[1];
+        var fullId = 'billing_phone_' + index + '_full';
+        var $row = $field.closest('.form-row');
+        var $hidden = $row.find('#' + fullId);
+
+        if (!$hidden.length) {
+            $hidden = $('<input/>', {
+                type: 'hidden',
+                id: fullId,
+                name: fullId
+            });
+
+            // Pode ser no final da .form-row mesmo
+            $row.append($hidden);
+        }
+
+        return $hidden;
+    }
+
     /**
-     * Bind close behavior for global notices
+     * Update hidden intl phone field with E.164-like value
+     *
+     * @since 1.2.0
+     * @param {jQuery} $field Phone input
+     */
+    function updateIntlPhoneFull($field) {
+        if (!$field || !$field.length) {
+            return;
+        }
+
+        var $hidden = ensureIntlPhoneFullField($field);
+
+        if (!$hidden || !$hidden.length) {
+            return;
+        }
+
+        // Apenas dígitos do input
+        var raw = normalizeDigits($field.val());
+
+        // Tentar pegar o DDI pelo wrapper .iti
+        var dialCode = '';
+        var $iti = $field.closest('.iti');
+
+        if ($iti.length) {
+            var $dial = $iti.find('.iti__selected-dial-code').first();
+
+            if ($dial.length) {
+                dialCode = $.trim($dial.text().replace(/\s+/g, '')); // ex: '+55'
+            }
+        }
+
+        // Se intl-tel-input estiver disponível, usar a API (melhor)
+        if (!dialCode && window.intlTelInputGlobals && typeof window.intlTelInputGlobals.getInstance === 'function') {
+            var instance = window.intlTelInputGlobals.getInstance($field[0]);
+
+            if (instance && typeof instance.getNumber === 'function') {
+                var number = instance.getNumber(); // já vem em E.164
+
+                $hidden.val(number || '');
+                return;
+            }
+        }
+
+        if (dialCode && raw) {
+            // dialCode já começa com '+'
+            $hidden.val(dialCode + raw);
+        } else {
+            $hidden.val('');
+        }
+    }
+
+    /**
+     * Bind handlers to keep billing_phone_{i}_full synced
      *
      * @since 1.2.0
      */
-    function bindNoticeCloseButtons() {
-        $(document).on('click', '.flexify-checkout-notice .close-notice', function (e) {
-            e.preventDefault();
-            $(this).closest('.flexify-checkout-notice').remove();
+    function bindIntlPhoneFullHandlers() {
+        // Delegated events (funciona mesmo após fragmentos de checkout)
+        $(document)
+            .off('.flexifyTicketIntl')
+            .on(
+                'input.flexifyTicketIntl change.flexifyTicketIntl countrychange.flexifyTicketIntl',
+                '.flexify-intl-phone input[id^="billing_phone_"]',
+                function () {
+                    updateIntlPhoneFull($(this));
+                }
+            );
+
+        // Sync inicial para campos já presentes
+        $('.flexify-intl-phone input[id^="billing_phone_"]').each(function () {
+            updateIntlPhoneFull($(this));
         });
     }
 
@@ -596,7 +711,7 @@
         loadCachedValues();
         bindCacheHandlers();
         bindStepValidation();
-        bindNoticeCloseButtons();
+        bindIntlPhoneFullHandlers();
     }
 
     $(init);

@@ -185,14 +185,20 @@ class Checkout {
         
                 woocommerce_form_field('billing_first_name_' . $i, array(
                     'type' => 'text',
-                    'class' => array('form-row-first'),
+                    'class' => array(
+                        'form-row-first',
+                        'flexify-checkout-tickets',
+                    ),
                     'label' => __('Nome', 'tickets-module-for-flexify-checkout'),
                     'required' => true,
                 ), $checkout->get_value('billing_first_name_' . $i));
         
                 woocommerce_form_field('billing_last_name_' . $i, array(
                     'type' => 'text',
-                    'class' => array('form-row-last'),
+                    'class' => array(
+                        'form-row-last',
+                        'flexify-checkout-tickets',
+                    ),
                     'label' => __('Sobrenome', 'tickets-module-for-flexify-checkout'),
                     'required' => true,
                 ), $checkout->get_value('billing_last_name_' . $i));
@@ -202,6 +208,7 @@ class Checkout {
                     'class' => array(
                         'form-row-first',
                         'validate-cpf-field',
+                        'flexify-checkout-tickets',
                     ),
                     'label' => __('CPF', 'tickets-module-for-flexify-checkout'),
                     'required' => true,
@@ -213,6 +220,7 @@ class Checkout {
                         'form-row-last',
                         'validate-phone-field',
                         'flexify-intl-phone',
+                        'flexify-checkout-tickets',
                     ),
                     'label' => __('Telefone', 'tickets-module-for-flexify-checkout'),
                     'required' => true,
@@ -223,6 +231,7 @@ class Checkout {
                     'class' => array(
                         'form-row-wide',
                         'validate-email-field',
+                        'flexify-checkout-tickets',
                     ),
                     'label' => __('E-mail', 'tickets-module-for-flexify-checkout'),
                     'required' => true,

@@ -32,7 +32,12 @@ Você pode instalar um plugin WordPress de duas maneiras: via o painel de admini
 
 ### Registro de alterações (Changelogs):
 
-Versãpo 1.2.0 (22/11/2025)
+Versão 1.2.1 (23/11/2025)
+* Recurso adicionado: Validação de CPF e e-mail em tempo real
+* Recurso adicionado: Informações dos ingressos no e-mail do pedido do usuário
+* Recurso adicionado: Fragmento com novo grupo de campos quando alterado quantidade do produto no carrinho
+
+Versão 1.2.0 (22/11/2025)
 * Otimizações:
     - Arquitetura IIFE nos scripts do frontend
 * Recurso adicionado: Campo Ativar produto de ingresso no editor do produto

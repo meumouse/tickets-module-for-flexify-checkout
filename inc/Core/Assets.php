@@ -9,7 +9,7 @@ defined('ABSPATH') || exit;
  * Register/enqueue frontend and backend scripts
  *
  * @since 1.0.0
- * @version 1.1.0
+ * @version 1.2.1
  * @package MeuMouse.com
  */
 class Assets {
@@ -45,16 +45,16 @@ class Assets {
      * Add assets to frontend
      * 
      * @since 1.0.0
-     * @version 1.2.0
+     * @version 1.2.1
      * @return void
      */
     public function frontend_assets() {
         // display scrips only checkout page
-        if ( ! defined( 'IS_FLEXIFY_CHECKOUT' ) || ! IS_FLEXIFY_CHECKOUT ) {
+        if ( ! is_flexify_checkout() ) {
 			return;
 		}
 
-        if ( 0 === Checkout::ticket_count() ) {
+        if ( 0 === Helpers::ticket_count() ) {
             return;
         }
 

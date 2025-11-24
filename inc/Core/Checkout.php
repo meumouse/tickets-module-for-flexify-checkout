@@ -40,7 +40,7 @@ class Checkout {
         add_action( 'woocommerce_checkout_update_order_meta', array( $this, 'save_ticket_checkout_fields' ) );
         
         // refresh ticket step when order review fragments are requested
-    //    add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'append_ticket_fragment' ), 10, 1 );
+        add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'append_ticket_fragment' ), 10, 1 );
     }
 
 
@@ -100,72 +100,60 @@ class Checkout {
             return '';
         }
 
-        // get object checkout
         $checkout = WC()->checkout;
 
         // start buffer
         ob_start();
 
         echo '<div class="flexify-ticket-fields" data-ticket-count="' . esc_attr( $ticket_count ) . '">';
-            // Add fields according to the number of tickets
             for ( $i = 1; $i <= $ticket_count; $i++ ) {
-                echo '<h3 class="h2 ticket-step-title flexify-heading">' . sprintf( __('Ingresso %s', 'tickets-module-for-flexify-checkout'), $i ) . '</h3>';
-        
-                woocommerce_form_field('billing_first_name_' . $i, array(
-                    'type' => 'text',
-                    'class' => array(
-                        'form-row-first',
-                        'flexify-checkout-tickets',
-                    ),
-                    'label' => __('Nome', 'tickets-module-for-flexify-checkout'),
-                    'required' => true,
-                ), $checkout->get_value('billing_first_name_' . $i));
-        
-                woocommerce_form_field('billing_last_name_' . $i, array(
-                    'type' => 'text',
-                    'class' => array(
-                        'form-row-last',
-                        'flexify-checkout-tickets',
-                    ),
-                    'label' => __('Sobrenome', 'tickets-module-for-flexify-checkout'),
-                    'required' => true,
-                ), $checkout->get_value('billing_last_name_' . $i));
-        
-                woocommerce_form_field('billing_cpf_' . $i, array(
-                    'type' => 'text',
-                    'class' => array(
-                        'form-row-first',
-                        'validate-cpf-field',
-                        'flexify-checkout-tickets',
-                    ),
-                    'label' => __('CPF', 'tickets-module-for-flexify-checkout'),
-                    'required' => true,
-                ), $checkout->get_value('billing_cpf_' . $i));
-        
-                woocommerce_form_field('billing_phone_' . $i, array(
-                    'type' => 'text',
-                    'class' => array(
-                        'form-row-last',
-                        'validate-phone-field',
-                        'flexify-intl-phone',
-                        'flexify-checkout-tickets',
-                    ),
-                    'label' => __('Telefone', 'tickets-module-for-flexify-checkout'),
-                    'required' => true,
-                ), $checkout->get_value('billing_phone_' . $i));
-        
-                woocommerce_form_field('billing_email_' . $i, array(
-                    'type' => 'email',
-                    'class' => array(
-                        'form-row-wide',
-                        'validate-email-field',
-                        'flexify-checkout-tickets',
-                    ),
-                    'label' => __('E-mail', 'tickets-module-for-flexify-checkout'),
-                    'required' => true,
-                ), $checkout->get_value('billing_email_' . $i));
+
+                // Important: each ticket must have a unique wrapper
+                echo '<div class="single-ticket-fields" data-ticket-index="' . esc_attr( $i ) . '">';
+
+                    echo '<h3 class="h2 ticket-step-title flexify-heading">' .
+                        sprintf( __( 'Ingresso %s', 'tickets-module-for-flexify-checkout' ), $i ) .
+                    '</h3>';
+
+                    // Render each field (unchanged from your original)
+                    woocommerce_form_field( "billing_first_name_{$i}", [
+                        'type' => 'text',
+                        'class' => [ 'form-row-first', 'flexify-checkout-tickets' ],
+                        'label' => __( 'Nome', 'tickets-module-for-flexify-checkout' ),
+                        'required' => true,
+                    ], $checkout->get_value( "billing_first_name_{$i}" ) );
+
+                    woocommerce_form_field( "billing_last_name_{$i}", [
+                        'type' => 'text',
+                        'class' => [ 'form-row-last', 'flexify-checkout-tickets' ],
+                        'label' => __( 'Sobrenome', 'tickets-module-for-flexify-checkout' ),
+                        'required' => true,
+                    ], $checkout->get_value( "billing_last_name_{$i}" ) );
+
+                    woocommerce_form_field( "billing_cpf_{$i}", [
+                        'type' => 'text',
+                        'class' => [ 'form-row-first', 'validate-cpf-field', 'flexify-checkout-tickets' ],
+                        'label' => __( 'CPF', 'tickets-module-for-flexify-checkout' ),
+                        'required' => true,
+                    ], $checkout->get_value( "billing_cpf_{$i}" ) );
+
+                    woocommerce_form_field( "billing_phone_{$i}", [
+                        'type' => 'text',
+                        'class' => [ 'form-row-last', 'validate-phone-field', 'flexify-intl-phone', 'flexify-checkout-tickets' ],
+                        'label' => __( 'Telefone', 'tickets-module-for-flexify-checkout' ),
+                        'required' => true,
+                    ], $checkout->get_value( "billing_phone_{$i}" ) );
+
+                    woocommerce_form_field( "billing_email_{$i}", [
+                        'type' => 'email',
+                        'class' => [ 'form-row-wide', 'validate-email-field', 'flexify-checkout-tickets' ],
+                        'label' => __( 'E-mail', 'tickets-module-for-flexify-checkout' ),
+                        'required' => true,
+                    ], $checkout->get_value( "billing_email_{$i}" ) );
+
+                echo '</div>'; // end single-ticket-fields
             }
-	    echo '</div>';
+        echo '</div>';
 
         return ob_get_clean();
     }
@@ -539,6 +527,7 @@ class Checkout {
      * Inject ticket fields into WooCommerce checkout fragments so they refresh when the cart updates.
      *
      * @since 1.2.0
+     * @version 1.2.1
      * @param array $fragments | Checkout fragments.
      * @return array
      */
@@ -547,7 +536,19 @@ class Checkout {
             return $fragments;
         }
 
-        $fragments['.flexify-ticket-fields'] = self::get_ticket_fields_markup();
+        $current_count = Helpers::ticket_count();
+        $previous_count = WC()->session->get( 'fc_prev_ticket_count', 0 );
+
+        WC()->session->set( 'fc_prev_ticket_count', $current_count );
+
+        $fragments['flexify_ticket_count'] = $current_count;
+
+        // If new tickets were added → send only the new ticket HTML.
+        if ( $current_count > $previous_count ) {
+            $new_ticket_index = $current_count;
+
+            $fragments['flexify_ticket_append'] = self::render_single_ticket( $new_ticket_index );
+        }
 
         return $fragments;
     }
@@ -750,5 +751,63 @@ class Checkout {
         }
 
         return '';
+    }
+
+
+    /**
+     * Render only one ticket group (used for incremental fragment updates)
+     *
+     * @since 1.2.1
+     * @param int $i | Ticket index
+     * @return string
+     */
+    public static function render_single_ticket( $i ) {
+        $checkout = WC()->checkout;
+
+        // start buffer
+        ob_start();
+
+        echo '<div class="single-ticket-fields" data-ticket-index="' . esc_attr( $i ) . '">';
+            echo '<h3 class="h2 ticket-step-title flexify-heading">' .
+                sprintf( __( 'Ingresso %s', 'tickets-module-for-flexify-checkout' ), $i ) .
+            '</h3>';
+
+            woocommerce_form_field( "billing_first_name_{$i}", [
+                'type' => 'text',
+                'class' => [ 'form-row-first', 'flexify-checkout-tickets' ],
+                'label' => __( 'Nome', 'tickets-module-for-flexify-checkout' ),
+                'required' => true,
+            ], $checkout->get_value( "billing_first_name_{$i}" ) );
+
+            woocommerce_form_field( "billing_last_name_{$i}", [
+                'type' => 'text',
+                'class' => [ 'form-row-last', 'flexify-checkout-tickets' ],
+                'label' => __( 'Sobrenome', 'tickets-module-for-flexify-checkout' ),
+                'required' => true,
+            ], $checkout->get_value( "billing_last_name_{$i}" ) );
+
+            woocommerce_form_field( "billing_cpf_{$i}", [
+                'type' => 'text',
+                'class' => [ 'form-row-first', 'validate-cpf-field', 'flexify-checkout-tickets' ],
+                'label' => __( 'CPF', 'tickets-module-for-flexify-checkout' ),
+                'required' => true,
+            ], $checkout->get_value( "billing_cpf_{$i}" ) );
+
+            woocommerce_form_field( "billing_phone_{$i}", [
+                'type' => 'text',
+                'class' => [ 'form-row-last', 'validate-phone-field', 'flexify-intl-phone', 'flexify-checkout-tickets' ],
+                'label' => __( 'Telefone', 'tickets-module-for-flexify-checkout' ),
+                'required' => true,
+            ], $checkout->get_value( "billing_phone_{$i}" ) );
+
+            woocommerce_form_field( "billing_email_{$i}", [
+                'type' => 'email',
+                'class' => [ 'form-row-wide', 'validate-email-field', 'flexify-checkout-tickets' ],
+                'label' => __( 'E-mail', 'tickets-module-for-flexify-checkout' ),
+                'required' => true,
+            ], $checkout->get_value( "billing_email_{$i}" ) );
+        echo '</div>';
+
+        return ob_get_clean();
     }
 }

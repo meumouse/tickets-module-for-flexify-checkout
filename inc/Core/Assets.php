@@ -50,7 +50,7 @@ class Assets {
      */
     public function frontend_assets() {
         // display scrips only checkout page
-        if ( ! defined( 'IS_FLEXIFY_CHECKOUT' ) || ! IS_FLEXIFY_CHECKOUT ) {
+        if ( ! is_flexify_checkout() ) {
 			return;
 		}
 

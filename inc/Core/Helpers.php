@@ -2,6 +2,8 @@
 
 namespace MeuMouse\Flexify_Checkout\Tickets\Core;
 
+use MeuMouse\Flexify_Checkout\Tickets\Admin\Product;
+
 // Exit if accessed directly.
 defined('ABSPATH') || exit;
 

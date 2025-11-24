@@ -314,15 +314,15 @@
         }
 
         var $checkoutForm = $('form.checkout');
-        var $wrapper = $checkoutForm.find('.woocommerce-notices-wrapper');
+        var wrapper = $checkoutForm.find('.woocommerce-notices-wrapper');
 
-        if (!$wrapper.length) {
-            $wrapper = $('<div class="woocommerce-notices-wrapper"></div>');
-            $checkoutForm.prepend($wrapper);
+        if (!wrapper.length) {
+            wrapper = $('<div class="woocommerce-notices-wrapper"></div>');
+            $checkoutForm.prepend(wrapper);
         }
 
         // Remove previous notices from this module
-        $wrapper.find('.flexify-checkout-notice.error').remove();
+        wrapper.find('.flexify-checkout-notice.error').remove();
 
         uniqueMessages.forEach(function (message) {
             var $notice = $('<div/>', {
@@ -339,7 +339,7 @@
             });
 
             $notice.append($closeBtn);
-            $wrapper.prepend($notice);
+            wrapper.prepend($notice);
         });
 
         window.scrollTo({
@@ -787,7 +787,7 @@
      * Init ticket helper
      *
      * @since 1.0.0
-     * @version 1.2.0
+     * @version 1.2.1
      */
     function init() {
         refreshFieldIds();
@@ -795,6 +795,45 @@
         bindCacheHandlers();
         bindStepValidation();
         bindIntlPhoneFullHandlers();
+
+        /**
+         * Handle incremental ticket rendering on fragment update
+         *
+         * @since 1.2.1
+         */
+        $(document.body).on('updated_checkout', function(event, data) {
+            if (!data || !data.fragments) {
+                return;
+            }
+
+            // Fragment key with new ticket HTML
+            var wrapper = $('.flexify-ticket-fields');
+
+            if ( data.fragments && data.fragments.flexify_ticket_append ) {
+                // Append the new ticket group
+                wrapper.append(data.fragments.flexify_ticket_append);
+
+                // Reinitialize masks, intl-tel-input and caching
+                refreshFieldIds();
+                bindCacheHandlers();
+                bindIntlPhoneFullHandlers();
+
+                if ( typeof window.fcw_intl_phone_init === 'function' ) {
+                    window.fcw_intl_phone_init();
+                }
+            }
+
+            var expected = parseInt(data.fragments.flexify_ticket_count, 10);
+            var rendered = wrapper.find('.single-ticket-fields').length;
+
+            // Update attribute automatically
+            wrapper.attr('data-ticket-count', expected);
+
+            // Remove extra fields (if quantity was reduced)
+            if ( rendered > expected ) {
+                wrapper.find('.single-ticket-fields').slice(expected).remove();
+            }
+        });
     }
 
     $(init);

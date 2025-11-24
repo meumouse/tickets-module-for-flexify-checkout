@@ -220,6 +220,48 @@
     }
 
     /**
+     * CPF validation using real check digits algorithm
+     *
+     * @since 1.2.1
+     * @return {Boolean}
+     */
+    function isValidCPF(cpf) {
+        cpf = (cpf || '').replace(/\D+/g, '');
+
+        if (!cpf || cpf.length !== 11) return false;
+
+        // Reject repeated digits (00000000000, 11111111111...)
+        if (/^(\d)\1+$/.test(cpf)) return false;
+
+        // Validate first check digit
+        var sum = 0;
+        for (var i = 0; i < 9; i++) sum += parseInt(cpf.charAt(i)) * (10 - i);
+        var firstDigit = (sum * 10) % 11;
+        if (firstDigit === 10 || firstDigit === 11) firstDigit = 0;
+        if (firstDigit !== parseInt(cpf.charAt(9))) return false;
+
+        // Validate second check digit
+        sum = 0;
+        for (i = 0; i < 10; i++) sum += parseInt(cpf.charAt(i)) * (11 - i);
+        var secondDigit = (sum * 10) % 11;
+        if (secondDigit === 10 || secondDigit === 11) secondDigit = 0;
+        if (secondDigit !== parseInt(cpf.charAt(10))) return false;
+
+        return true;
+    }
+
+    /**
+     * Validate email using regex
+     *
+     * @since 1.2.1
+     * @return {Boolean}
+     */
+    function isValidEmail(email) {
+        var regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        return regex.test(email);
+    }
+
+    /**
      * Normalize to digits only
      *
      * @since 1.2.0
@@ -232,26 +274,18 @@
      * Clear validation feedback
      *
      * @since 1.2.0
-     * @version 1.2.0
+     * @version 1.2.1
      */
     function removeValidationFeedback() {
-        // Remove old global notices from this module
         $('.flexify-checkout-notice.error').remove();
-        $(noticeSelector).remove();
 
-        fieldIds.forEach(function (fieldId) {
+        fieldIds.forEach( function(fieldId) {
             var $field = $('#' + fieldId);
             var $row = $field.closest('.form-row');
 
-            $field
-                .removeClass('woocommerce-invalid')
-                .removeAttr('aria-invalid');
+            $field.removeClass('woocommerce-invalid').removeAttr('aria-invalid');
 
-            $row
-                .removeClass('woocommerce-invalid')
-                .removeClass('woocommerce-invalid-required-field');
-
-            // Remove only our inline handler; keep base Woo span.error if needed
+            $row.removeClass('woocommerce-invalid wc-invalid-required-field');
             $row.find('.' + inlineErrorClass).remove();
         });
     }
@@ -318,52 +352,34 @@
      * Show inline error messages per field, without duplicates
      *
      * @since 1.2.0
+     * @version 1.2.1
      * @param {Object} fieldMessages | { fieldId: [messages] }
      */
     function showInlineFieldMessages(fieldMessages) {
-        if (!fieldMessages) {
-            return;
-        }
-
-        Object.keys(fieldMessages).forEach(function (fieldId) {
+        Object.keys(fieldMessages).forEach( function(fieldId) {
             var msgs = fieldMessages[fieldId];
 
-            if (!msgs || !msgs.length) {
+            if ( ! msgs || ! msgs.length ) {
                 return;
             }
 
             var $field = $('#' + fieldId);
             var $row = $field.closest('.form-row');
-            var message = msgs[0]; // First message is enough for UI
+            var $existing = $row.find('span.error').first();
 
-            // Find existing Woo error span, if any
-            var $existingError = $row.find('span.error').first();
-
-            if ($existingError.length) {
-                $existingError
-                    .text(message)
-                    .addClass(inlineErrorClass);
-
-                // Remove any extra error spans to avoid duplicates
-                $row.find('span.error').not($existingError).remove();
+            if ($existing.length) {
+                $existing.text(msgs[0]).addClass(inlineErrorClass);
             } else {
-                // Create a single new error span
                 var $error = $('<span/>', {
                     'class': 'error ' + inlineErrorClass,
-                    text: message
+                    text: msgs[0]
                 });
 
                 $row.append($error);
             }
 
-            // Mark as invalid in WooCommerce/Flexify style
-            $field
-                .addClass('woocommerce-invalid')
-                .attr('aria-invalid', 'true');
-
-            $row
-                .addClass('woocommerce-invalid')
-                .addClass('woocommerce-invalid-required-field');
+            $field.addClass('woocommerce-invalid').attr('aria-invalid', 'true');
+            $row.addClass('woocommerce-invalid').addClass('woocommerce-invalid-required-field');
         });
     }
 
@@ -442,84 +458,101 @@
     }
 
     /**
-     * Validate ticket fields before moving to next step
+     * Validate ticket fields (required + unique + CPF + email)
      *
      * @since 1.2.0
-     * @version 1.2.0
-     * @return {Object}
+     * @version 1.2.1
      */
     function validateTicketFields() {
-        // Refresh fields (in case fragments were updated)
         refreshFieldIds();
         bindCacheHandlers();
-
-        if (!fieldIds.length) {
-            return { isValid: true, messages: [], fieldMessages: {} };
-        }
-
         removeValidationFeedback();
 
         var messages = [];
         var fieldMessages = {};
 
         var cpfEntries = [];
-        var phoneEntries = [];
         var emailEntries = [];
+        var phoneEntries = [];
 
-        fieldIds.forEach(function (fieldId) {
+        fieldIds.forEach( function(fieldId) {
             var $field = $('#' + fieldId);
             var value = $.trim($field.val() || '');
             var $row = $field.closest('.form-row');
 
-            if (!value) {
-                var labelText = $.trim($row.find('label').first().text()) || fieldId;
-                labelText = labelText.replace(/\*$/, '').trim();
+            var label = $.trim($row.find('label').text()).replace(/\*$/, '');
 
-                var msg = labelText + ' é um campo obrigatório.';
+            /** Required field validation */
+            if (!value) {
+                var msg = label + ' é um campo obrigatório.';
 
                 messages.push(msg);
-
-                if (!fieldMessages[fieldId]) {
-                    fieldMessages[fieldId] = [];
-                }
-
-                if (fieldMessages[fieldId].indexOf(msg) === -1) {
-                    fieldMessages[fieldId].push(msg);
-                }
-
-                $field
-                    .addClass('woocommerce-invalid')
-                    .attr('aria-invalid', 'true');
-
-                $row
-                    .addClass('woocommerce-invalid')
-                    .addClass('woocommerce-invalid-required-field');
+                fieldMessages[fieldId] = fieldMessages[fieldId] || [];
+                fieldMessages[fieldId].push(msg);
             }
 
-            // Lists for duplicate checking
+            /** Collect CPF */
             if (fieldId.indexOf('billing_cpf_') !== -1 && value) {
-                cpfEntries.push({
-                    id: fieldId,
-                    value: normalizeDigits(value)
-                });
+                var cpf = normalizeDigits(value);
+
+                if (!isValidCPF(cpf)) {
+                    var invalidCPFmsg = 'O CPF informado é inválido.';
+
+                    messages.push(invalidCPFmsg);
+                    fieldMessages[fieldId] = fieldMessages[fieldId] || [];
+                    fieldMessages[fieldId].push(invalidCPFmsg);
+                }
+
+                cpfEntries.push({ id: fieldId, value: cpf });
             }
 
+            /** Collect email and validate format */
+            if (fieldId.indexOf('billing_email_') !== -1 && value) {
+                var email = value.toLowerCase();
+
+                if (!isValidEmail(email)) {
+                    var invalidEmailMsg = 'O e-mail informado é inválido.';
+
+                    messages.push(invalidEmailMsg);
+                    fieldMessages[fieldId] = fieldMessages[fieldId] || [];
+                    fieldMessages[fieldId].push(invalidEmailMsg);
+                }
+
+                emailEntries.push({ id: fieldId, value: email });
+            }
+
+            /** Collect phone for duplicate validation */
             if (fieldId.indexOf('billing_phone_') !== -1 && value) {
+                var $field = $('#' + fieldId);
+                var isIntl = $field.closest('.flexify-intl-phone').length > 0;
+                var phoneValid = true;
+
+                if (isIntl) {
+                    // Validate using intl-tel-input
+                    phoneValid = isValidIntlPhone($field);
+                } else {
+                    // Validate using standard Brazilian format
+                    phoneValid = isValidBrazilPhone(value);
+                }
+
+                if ( ! phoneValid ) {
+                    var invalidPhoneMsg = 'Por favor, insira um número de telefone válido.';
+
+                    messages.push(invalidPhoneMsg);
+
+                    fieldMessages[fieldId] = fieldMessages[fieldId] || [];
+                    fieldMessages[fieldId].push(invalidPhoneMsg);
+                }
+
+                // Add entry for duplicate checking
                 phoneEntries.push({
                     id: fieldId,
                     value: normalizeDigits(value)
                 });
             }
-
-            if (fieldId.indexOf('billing_email_') !== -1 && value) {
-                emailEntries.push({
-                    id: fieldId,
-                    value: value.toLowerCase()
-                });
-            }
         });
 
-        // Duplicate validation: CPF, phone, email
+        /** Duplicate validations */
         validateUniqueValues(cpfEntries, 'CPF', messages, fieldMessages);
         validateUniqueValues(phoneEntries, 'telefone', messages, fieldMessages);
         validateUniqueValues(emailEntries, 'e-mail', messages, fieldMessages);
@@ -698,6 +731,56 @@
         $('.flexify-intl-phone input[id^="billing_phone_"]').each(function () {
             updateIntlPhoneFull($(this));
         });
+    }
+
+    /**
+     * Validate Brazilian phone format when intl-tel-input is not active
+     *
+     * Accepts (00) 0000-0000 or (00) 00000-0000
+     * Also validates length (10 or 11 digits)
+     * Rejects invalid repeated sequences (11111111111)
+     *
+     * @since 1.2.1
+     * @param {String} phone
+     * @return {Boolean}
+     */
+    function isValidBrazilPhone(phone) {
+        var digits = normalizeDigits(phone);
+
+        if (digits.length < 10 || digits.length > 11) {
+            return false;
+        }
+
+        // Reject repeated numbers like 00000000000 or 1111111111
+        if (/^(\d)\1+$/.test(digits)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate phone using intl-tel-input instance
+     *
+     * @since 1.2.1
+     * @param {jQuery} $field
+     * @return {Boolean}
+     */
+    function isValidIntlPhone($field) {
+        if (
+            !window.intlTelInputGlobals ||
+            typeof window.intlTelInputGlobals.getInstance !== 'function'
+        ) {
+            return true; // intl-tel-input not available — allow validation fallback
+        }
+
+        var instance = window.intlTelInputGlobals.getInstance($field[0]);
+
+        if (!instance || typeof instance.isValidNumber !== 'function') {
+            return true;
+        }
+
+        return instance.isValidNumber();
     }
 
     /**

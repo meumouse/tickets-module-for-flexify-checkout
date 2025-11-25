@@ -32,6 +32,11 @@ Você pode instalar um plugin WordPress de duas maneiras: via o painel de admini
 
 ### Registro de alterações (Changelogs):
 
+Versão 1.2.2 (25/11/2025)
+* Correção de bugs
+    - Instanciar telefone internacional após adicionar novo ingresso
+    - Validação dos campos de ingressos apenas no escopo do grupo de campos de ingressos
+
 Versão 1.2.1 (23/11/2025)
 * Recurso adicionado: Validação de CPF e e-mail em tempo real
 * Recurso adicionado: Informações dos ingressos no e-mail do pedido do usuário

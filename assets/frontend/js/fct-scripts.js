@@ -134,18 +134,24 @@
      * Find ticket fields currently in DOM
      *
      * @since 1.2.0
+     * @version 1.2.2
      * @return {Array}
      */
     function findTicketFields() {
         var ids = [];
+        var scope = $('.flexify-ticket-fields');
 
-        ticketFieldPrefixes.forEach(function (prefix) {
-            $('input[id^="' + prefix + '"]').each(function () {
+        if ( ! scope.length ) {
+            return ids;
+        }
+
+        ticketFieldPrefixes.forEach( function(prefix) {
+           scope.find('input[id^="' + prefix + '"]').each( function() {
                 var id = this.id;
 
-                // For phone fields, only accept billing_phone_N (N = dígitos, sem sufixo _full)
-                if (prefix === 'billing_phone_') {
-                    if (!/^billing_phone_\d+$/.test(id)) {
+                // For phone fields, accept only billing_phone_N (no _full)
+                if ( prefix === 'billing_phone_' ) {
+                    if ( ! /^billing_phone_\d+$/.test(id) ) {
                         return;
                     }
                 }
@@ -165,7 +171,7 @@
     function refreshFieldIds() {
         fieldIds = findTicketFields();
 
-        if (!fieldIds.length && params.fields_to_mask) {
+        if ( ! fieldIds.length && params.fields_to_mask ) {
             fieldIds = params.fields_to_mask;
         }
     }
@@ -177,10 +183,10 @@
      * @version 1.2.0
      */
     function loadCachedValues() {
-        fieldIds.forEach(function (fieldId) {
+        fieldIds.forEach( function(fieldId) {
             var cachedValue = CookieStore.get(fieldId);
 
-            if (cachedValue) {
+            if ( cachedValue ) {
                 $('#' + fieldId).val(cachedValue);
             }
         });
@@ -800,37 +806,37 @@
          * Handle incremental ticket rendering on fragment update
          *
          * @since 1.2.1
+         * @version 1.2.2
          */
         $(document.body).on('updated_checkout', function(event, data) {
             if (!data || !data.fragments) {
                 return;
             }
 
-            // Fragment key with new ticket HTML
             var wrapper = $('.flexify-ticket-fields');
 
-            if ( data.fragments && data.fragments.flexify_ticket_append ) {
-                // Append the new ticket group
+            if (data.fragments.flexify_ticket_append) {
+
+                // Append the new ticket group HTML
                 wrapper.append(data.fragments.flexify_ticket_append);
 
-                // Reinitialize masks, intl-tel-input and caching
+                // Refresh tracking
                 refreshFieldIds();
                 bindCacheHandlers();
-                bindIntlPhoneFullHandlers();
 
-                if ( typeof window.fcw_intl_phone_init === 'function' ) {
-                    window.fcw_intl_phone_init();
-                }
+                // Re-initialize intl-tel-input for new fields
+                Flexify_Checkout.Fields.internationalPhone();
+
+                // Sync "_full" hidden field handler
+                bindIntlPhoneFullHandlers();
             }
 
             var expected = parseInt(data.fragments.flexify_ticket_count, 10);
             var rendered = wrapper.find('.single-ticket-fields').length;
 
-            // Update attribute automatically
             wrapper.attr('data-ticket-count', expected);
 
-            // Remove extra fields (if quantity was reduced)
-            if ( rendered > expected ) {
+            if (rendered > expected) {
                 wrapper.find('.single-ticket-fields').slice(expected).remove();
             }
         });

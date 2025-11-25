@@ -11,7 +11,7 @@ defined('ABSPATH') || exit;
  * Add tickets step on locate shipping step
  * 
  * @since 1.0.0
- * @version 1.2.1
+ * @version 1.2.2
  * @package MeuMouse.com
  */
 class Checkout {
@@ -37,7 +37,7 @@ class Checkout {
         add_action( 'woocommerce_checkout_process', array( $this, 'validate_ticket_checkout_fields' ) );
 
         // save ticket fields
-        add_action( 'woocommerce_checkout_update_order_meta', array( $this, 'save_ticket_checkout_fields' ) );
+        add_action( 'woocommerce_checkout_update_order_meta', array( $this, 'save_ticket_checkout_fields' ), 10, 1 );
         
         // refresh ticket step when order review fragments are requested
         add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'append_ticket_fragment' ), 10, 1 );
@@ -344,7 +344,7 @@ class Checkout {
      * Save ticket fields on order
      * 
      * @since 1.0.0
-     * @version 1.2.0
+     * @version 1.2.2
      * @param int $order_id | Order ID
      * @return void
      */
@@ -353,7 +353,8 @@ class Checkout {
             return;
         }
 
-        $ticket_count = Helpers::ticket_count();
+        $order = wc_get_order( $order_id );
+        $ticket_count = Helpers::ticket_count( $order );
 
         for ( $i = 1; $i <= $ticket_count; $i++ ) {
             if ( ! empty( $_POST['billing_first_name_' . $i] ) ) {
